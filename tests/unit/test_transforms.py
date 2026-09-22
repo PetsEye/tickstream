@@ -22,6 +22,15 @@ KAFKA_SCHEMA = (
 )
 
 
+def as_utc(value: datetime) -> datetime:
+    """Spark's collect() may return naive datetimes; normalise to aware UTC."""
+    return (
+        value.replace(tzinfo=timezone.utc)
+        if value.tzinfo is None
+        else value.astimezone(timezone.utc)
+    )
+
+
 def _trade_json(symbol: str, price: float, quantity: float, side: str, trade_ts: int) -> str:
     return json.dumps(
         {
@@ -51,7 +60,7 @@ def test_parse_and_validate_roundtrip(spark):
 
     assert len(valid) == 1
     assert valid[0]["symbol"] == "BTC-USD"
-    assert valid[0]["event_time"] == datetime(2023, 11, 14, 22, 13, 20, tzinfo=timezone.utc)
+    assert as_utc(valid[0]["event_time"]) == datetime(2023, 11, 14, 22, 13, 20, tzinfo=timezone.utc)
     assert len(bad) == 1
     assert bad[0]["value"] == "not-json"
 
@@ -70,7 +79,7 @@ def test_build_candles_computes_ohlcv_and_vwap(spark):
     candles = build_candles(df, "1 minute", "1 minute").collect()
     assert len(candles) == 1
     candle = candles[0]
-    assert candle["window_start"] == base
+    assert as_utc(candle["window_start"]) == base
     assert candle["open"] == 100.0
     assert candle["high"] == 110.0
     assert candle["low"] == 90.0

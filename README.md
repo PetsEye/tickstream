@@ -247,7 +247,14 @@ npm run build
 ```
 
 Spark transformation tests need `pyspark`; they are skipped automatically when it
-is not installed. The integration test needs a broker:
+is not installed. On a machine without a JDK, run them inside the Spark
+container instead:
+
+```bash
+make test-spark                 # runs scripts/test_spark.sh against the stack
+```
+
+The integration test needs a broker:
 
 ```bash
 TICKSTREAM_INTEGRATION=1 KAFKA_BOOTSTRAP_SERVERS=localhost:29092 pytest tests/integration

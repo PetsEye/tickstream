@@ -40,13 +40,24 @@ def valid_trades(parsed_df: DataFrame) -> DataFrame:
             F.col("kafka_offset").alias("kafka_offset"),
             F.timestamp_millis(F.col("trade.trade_ts")).alias("event_time"),
         )
-        .filter((F.col("price") > 0) & (F.col("quantity") >= 0))
+        .filter(
+            F.col("trade_id").isNotNull()
+            & F.col("symbol").isNotNull()
+            & (F.col("price") > 0)
+            & (F.col("quantity") >= 0)
+        )
     )
 
 
 def malformed_trades(parsed_df: DataFrame) -> DataFrame:
-    """Raw payloads that could not be decoded (schema violations)."""
-    return parsed_df.filter(F.col("trade").isNull()).select(F.col("json").alias("value"))
+    """Raw payloads that could not be decoded (schema violations).
+
+    Spark's ``from_json`` returns an all-null struct rather than null for
+    unparseable input, so a missing required field is the reliable signal.
+    """
+    return parsed_df.filter(F.col("trade").isNull() | F.col("trade.trade_id").isNull()).select(
+        F.col("json").alias("value")
+    )
 
 
 def deduplicate(trades_df: DataFrame, watermark_delay: str) -> DataFrame:

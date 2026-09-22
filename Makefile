@@ -2,7 +2,7 @@
 SHELL := /bin/bash
 COMPOSE := docker compose
 
-.PHONY: help install lint format typecheck test test-unit up down logs ps topics smoke producer web bench clean
+.PHONY: help install lint format typecheck test test-unit test-spark up down logs ps topics smoke producer web bench clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -26,6 +26,9 @@ test: ## Run the full test suite
 
 test-unit: ## Run unit tests only
 	pytest tests/unit
+
+test-spark: ## Run Spark tests inside the spark container (no local Java needed)
+	./scripts/test_spark.sh
 
 up: ## Start the streaming stack
 	$(COMPOSE) up -d --build
