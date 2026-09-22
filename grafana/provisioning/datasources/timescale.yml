@@ -1,0 +1,17 @@
+apiVersion: 1
+
+datasources:
+  - name: TimescaleDB
+    uid: timescale
+    type: postgres
+    access: proxy
+    url: timescaledb:5432
+    database: tickstream
+    user: tickstream
+    secureJsonData:
+      password: tickstream
+    jsonData:
+      sslmode: disable
+      postgresVersion: 1700
+      timescaledb: true
+    isDefault: true

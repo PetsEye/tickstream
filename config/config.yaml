@@ -1,0 +1,52 @@
+app:
+  name: tickstream
+  log_level: INFO
+
+kafka:
+  bootstrap_servers: "kafka:9092"
+  topic: trades
+  dead_letter_topic: trades_dlq
+  client_id: tickstream-producer
+
+producer:
+  # coinbase | binance | kraken | synthetic
+  source: coinbase
+  symbols:
+    - BTC-USD
+    - ETH-USD
+    - SOL-USD
+  reconnect_backoff_seconds: 5
+  synthetic:
+    file: data/sample_trades.jsonl
+    speed: 50.0
+    loop: true
+
+spark:
+  app_name: tickstream-streaming
+  kafka_bootstrap_servers: "kafka:9092"
+  topic: trades
+  checkpoint_dir: /opt/tickstream/checkpoints
+  trigger_interval: "5 seconds"
+  watermark_delay: "15 seconds"
+  window_duration: "1 minute"
+  window_slide: "1 minute"
+  max_offsets_per_trigger: 5000
+
+timescale:
+  host: timescaledb
+  port: 5432
+  database: tickstream
+  user: tickstream
+  password: tickstream
+  batch_size: 500
+
+delta:
+  enabled: true
+  base_path: /opt/tickstream/delta
+
+anomaly:
+  enabled: true
+  window: "5 minutes"
+  slide: "1 minute"
+  zscore_threshold: 3.0
+  min_trades: 20
