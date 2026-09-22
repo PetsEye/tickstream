@@ -1,0 +1,73 @@
+name: benchmark
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1" # weekly, Mondays 06:00 UTC
+
+concurrency:
+  group: benchmark
+  cancel-in-progress: false
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install benchmark dependency
+        run: python -m pip install --upgrade pip aiokafka
+
+      - name: Start the stack (synthetic source, web profile for the API)
+        run: TICKSTREAM_PRODUCER__SOURCE=synthetic docker compose --profile web up -d --build
+
+      - name: Warm up (wait for candles and anomalies)
+        run: |
+          set -euo pipefail
+          q() {
+            docker exec -e PGPASSWORD=tickstream tickstream-timescaledb \
+              psql -U tickstream -d tickstream -tAc "$1"
+          }
+          for _ in $(seq 1 60); do
+            candles=$(q "SELECT count(*) FROM candles" 2>/dev/null || echo 0)
+            anomalies=$(q "SELECT count(*) FROM anomalies" 2>/dev/null || echo 0)
+            echo "candles=${candles} anomalies=${anomalies}"
+            if [ "${candles:-0}" -gt 0 ] && [ "${anomalies:-0}" -gt 0 ]; then exit 0; fi
+            sleep 10
+          done
+          echo "warm-up timed out" >&2
+          exit 1
+
+      - name: Run benchmark suite
+        run: COUNT=50000 LATENCY_COUNT=3000 SSE_SECONDS=60 ./scripts/measure.sh | tee benchmark.txt
+
+      - name: Publish job summary
+        if: always()
+        run: |
+          {
+            echo "## tickstream benchmark"
+            echo
+            echo "Measured on a single GitHub-hosted runner. Methodology: docs/benchmarks.md."
+            echo
+            echo '```'
+            cat benchmark.txt 2>/dev/null || echo "benchmark produced no output"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload raw results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmark.txt
+          if-no-files-found: warn
+
+      - name: Stack logs on failure
+        if: failure()
+        run: docker compose --profile web logs --tail=200
