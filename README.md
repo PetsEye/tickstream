@@ -1,5 +1,9 @@
 # tickstream
 
+[![ci](https://github.com/PetsEye/tickstream/actions/workflows/ci.yml/badge.svg)](https://github.com/PetsEye/tickstream/actions/workflows/ci.yml)
+[![benchmark](https://github.com/PetsEye/tickstream/actions/workflows/benchmark.yml/badge.svg)](https://github.com/PetsEye/tickstream/actions/workflows/benchmark.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **Real-time crypto market analytics on Apache Kafka + Spark Structured Streaming.**
 
 `tickstream` ingests live public crypto trades, processes them with PySpark
@@ -31,7 +35,7 @@ flowchart LR
 ## Quickstart
 
 ```bash
-git clone <your-fork-url> tickstream && cd tickstream
+git clone https://github.com/PetsEye/tickstream.git && cd tickstream
 cp .env.example .env
 docker compose up -d --build
 ```
