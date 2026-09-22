@@ -87,6 +87,23 @@ Path: Spark upsert → `pg_notify` → asyncpg `LISTEN` → SSE → localhost cl
 | web (nginx) | ~9 MiB | |
 | **total** | **~2.5 GiB** | of 7.65 GiB allocated |
 
+### Cross-check: GitHub-hosted runner
+
+The `benchmark` workflow (`.github/workflows/benchmark.yml`) runs the same suite
+on a `ubuntu-latest` runner (4 vCPU, 15.6 GiB) and publishes the output to the
+job summary. One run:
+
+| Metric | Local (Apple Silicon) | GitHub runner |
+|---|---|---|
+| Producer → Kafka | ~40k msg/s | 24.6k msg/s |
+| Publish latency p50 / p99 | ~7 ms / ~15 ms | 6.5 ms / 13.3 ms |
+| End-to-end (default config) | 1,000 rec/s | 943 rec/s |
+| SSE candle p50 | ~11 ms | 15.5 ms |
+| SSE anomaly p50 | ~12 ms | 17.0 ms |
+
+Same order of magnitude on different hardware: the config-bounded end-to-end
+rate and the millisecond-scale delivery latency both hold.
+
 ## Methodology & caveats
 
 - **Local single-node topology.** No cluster, no replication, no multi-broker
