@@ -4,7 +4,7 @@
 [![benchmark](https://github.com/PetsEye/tickstream/actions/workflows/benchmark.yml/badge.svg)](https://github.com/PetsEye/tickstream/actions/workflows/benchmark.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**tickstream** — live crypto market analytics on Apache Kafka + Spark Structured
+Live crypto market analytics on Apache Kafka + Spark Structured
 Streaming. Ingests public exchange trades, computes windowed analytics in PySpark,
 stores them in TimescaleDB + Delta Lake, and serves a Grafana dashboard and a
 React terminal. One `docker compose up`. No API keys, works offline.
